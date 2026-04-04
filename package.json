@@ -1,0 +1,24 @@
+{
+  "name": "agent.zhangjiluo.com",
+  "main": "index.js",
+  "scripts": {
+    "dev": "tsx --watch src/index.ts",
+    "dev:chat": "tsx --watch src/index.ts chat --log",
+    "dev:log": "tsx --watch src/index.ts log",
+    "build": "tsc --noEmit --outDir dist --moduleResolution bundler"
+  },
+  "packageManager": "pnpm@10.25.0",
+  "dependencies": {
+    "@ai-sdk/anthropic": "^3.0.66",
+    "@anthropic-ai/sdk": "^0.82.0",
+    "@types/node": "^25.5.2",
+    "ai": "^6.0.146",
+    "cac": "^7.0.0",
+    "mitt": "^3.0.1",
+    "ws": "^8.20.0"
+  },
+  "devDependencies": {
+    "tsx": "^4.21.0",
+    "typescript": "^6.0.2"
+  }
+}

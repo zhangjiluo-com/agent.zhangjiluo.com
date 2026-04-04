@@ -1,0 +1,14 @@
+{
+  "compilerOptions": {
+    "module": "preserve",
+    "target": "esnext",
+    "moduleResolution": "bundler",
+    "sourceMap": false,
+    "declaration": false,
+    "noUncheckedIndexedAccess": true,
+    "strict": false,
+    "isolatedModules": true,
+    "noUncheckedSideEffectImports": true,
+    "skipLibCheck": true,
+  }
+}
