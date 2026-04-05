@@ -7,24 +7,6 @@ function closeChatCli() {
   exit(0);
 }
 
-function listen() {
-  event.on("llmResponse", (res: any) => {
-    console.log(res);
-
-    // throw new Error("llmResponse not implemented");
-
-    // const res = await chat(line);
-    for (let index = 0; index < res.content.length; index++) {
-      const element = res.content[index];
-      if (element.type === "text") {
-        process.stdout.write("AI: ");
-        process.stdout.write(element.text);
-      }
-    }
-    process.stdout.write("\n");
-  });
-}
-
 export async function startCliChannel() {
   const rl = readline.createInterface({ input, output, terminal: true });
 
@@ -70,20 +52,25 @@ export async function startCliChannel() {
     closeChatCli();
   };
   ws.onmessage = (msg: MessageEvent<string>) => {
-    // console.log("cli channel message");
-    // console.log(msg);
-    // console.log(msg.data);
+    console.log("cli channel message");
+    console.log(msg);
+    console.log(msg.data);
     // console.log(typeof msg.data);
     const data = JSON.parse(msg.data);
-    if (data.type === "llmResponse") {
+    if (data.type === "aiResponse") {
       const res = data.data;
-      for (let index = 0; index < res.content.length; index++) {
-        const element = res.content[index];
-        if (element.type === "text") {
-          process.stdout.write(element.text);
-        }
+      if (res.content.type === "text") {
+        process.stdout.write(res.content.text);
+        process.stdout.write("\n");
+      } else {
+        console.log("其他类型", res.content);
       }
-      process.stdout.write("\n");
+      // for (let index = 0; index < res.content.length; index++) {
+      //   const element = res.content[index];
+      //   if (element.type === "text") {
+      //     process.stdout.write(element.text);
+      //   }
+      // }
     }
   };
 }
