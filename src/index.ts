@@ -5,7 +5,6 @@ function interceptFetch() {
     const request = new Request(input, init);
     const __DEBUG__ = false;
     if (
-      !__DEBUG__ ||
       request.url.startsWith("http://localhost") ||
       request.url.startsWith("http://127.0.0.1")
     ) {
@@ -61,18 +60,27 @@ function interceptFetch() {
       }
     }
 
-    console.log("=== FETCH REQUEST ===");
-    console.log("URL:", finalRequest.url);
-    console.log("METHOD:", finalRequest.method);
-    console.log("HEADERS:", Object.fromEntries(finalRequest.headers.entries()));
-    console.log("BODY:", finalRequestBodyText || null);
+    if (__DEBUG__) {
+      console.log("=== FETCH REQUEST ===");
+      console.log("URL:", finalRequest.url);
+      console.log("METHOD:", finalRequest.method);
+      console.log(
+        "HEADERS:",
+        Object.fromEntries(finalRequest.headers.entries()),
+      );
+      console.log("BODY:", finalRequestBodyText || null);
+    }
+    const startTime = Date.now();
 
     const response = await originalFetch(finalRequest);
     const responseBodyText = await response.clone().text();
-    console.log("=== FETCH RESPONSE ===");
-    console.log("STATUS:", response.status, response.statusText);
-    console.log("HEADERS:", Object.fromEntries(response.headers.entries()));
-    console.log("BODY:", responseBodyText || null);
+    if (__DEBUG__) {
+      console.log("=== FETCH RESPONSE ===");
+      console.log("STATUS:", response.status, response.statusText);
+      console.log("HEADERS:", Object.fromEntries(response.headers.entries()));
+      console.log("BODY:", responseBodyText || null);
+    }
+    console.log("请求耗时:", Math.floor((Date.now() - startTime) / 1000), "秒");
 
     return response;
   }

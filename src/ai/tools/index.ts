@@ -1,9 +1,12 @@
 import { tool, ToolLoopAgent } from "ai";
+import { exec } from "node:child_process";
 import { mkdir, readdir, readFile, writeFile } from "node:fs/promises";
 import { dirname, resolve, sep } from "node:path";
+import { promisify } from "node:util";
 import z from "zod";
 
 const TOOL_WORKSPACE_ROOT = resolve(process.cwd());
+const execAsync = promisify(exec);
 
 function toSafeAbsolutePath(inputPath: string) {
   const resolvedPath = resolve(TOOL_WORKSPACE_ROOT, inputPath);
@@ -107,8 +110,52 @@ const writeTextFileTool = tool({
   },
 });
 
+const commandTool = tool({
+  description: "Run a command on the system by node child_process.exec",
+  inputSchema: z.object({
+    command: z.string().trim().describe("The command to run"),
+  }),
+  async execute(input) {
+    const startTime = Date.now();
+    console.log("即将执行命令:", input);
+    try {
+      const { stdout, stderr } = await execAsync(input.command, {
+        // timeout: 10_000,
+        encoding: "utf-8",
+      });
+      console.log(
+        "执行命令耗时:",
+        Math.floor((Date.now() - startTime) / 1000),
+        "秒",
+      );
+      return {
+        result: "success",
+        command: input.command,
+        stdout,
+        stderr,
+      };
+    } catch (e: any) {
+      console.log(
+        "执行命令失败:",
+        e,
+        "耗时:",
+        Math.floor((Date.now() - startTime) / 1000),
+        "秒",
+      );
+      return {
+        result: "failed",
+        command: input.command,
+        stdout: (e.stdout || "").substring(0, 2000),
+        stderr: (e.stderr || e.message).substring(0, 2000),
+        exit_code: e.status ?? 1,
+      };
+    }
+  },
+});
+
 export const tools = {
-  list_directory: listDirectoryTool,
-  read_file: readFileAsTextTool,
-  write_file: writeTextFileTool,
+  // list_directory: listDirectoryTool,
+  // read_file: readFileAsTextTool,
+  // write_file: writeTextFileTool,
+  command: commandTool,
 };
