@@ -1,40 +1,132 @@
-import Anthropic from "@anthropic-ai/sdk";
-import { event } from "../gateway/event";
-import { EVENT_ID_LLM_RESPONSE } from "../etc/constants";
+import {
+  generateText,
+  ModelMessage,
+  stepCountIs,
+  ToolSet,
+  wrapLanguageModel,
+} from "ai";
+import { createAnthropic } from "@ai-sdk/anthropic";
+import { devToolsMiddleware } from "@ai-sdk/devtools";
 
-const BASE_SYSTEM_PROMPT =
-  "You are a helpful assistant. Respond in the same language the user uses.";
+// const TOOL_WORKSPACE_ROOT = resolve(process.cwd());
 
 type LLMChatData = {
-  systemPrompt: string;
-  messages: any[];
-  maxResponseTokens: number;
+  system: string;
+  messages: ModelMessage[];
+  maxOutputTokens: number;
   model: string;
+  tools?: ToolSet;
 };
 
+// export async function chat1(msg: LLMChatData) {
+//   const client = new Anthropic({
+//     apiKey:
+//       "sk-kimi-ytzFgV7zkUHJ1YSfPedv5YV639tIaZFmmHtcAMYFP1BMHkawXmYHYoNrPc3wseU8",
+//     baseURL: "https://api.kimi.com/coding/",
+//   });
+
+//   const workingMessages = [...msg.messages];
+//   const tools: Anthropic.Tool[] = [
+//     {
+//       name: "list_directory",
+//       description:
+//         "List files and folders under a workspace path. Use relative paths like '.', 'src', 'src/ai'.",
+//       input_schema: {
+//         type: "object",
+//         properties: {
+//           path: { type: "string" },
+//         },
+//       },
+//     },
+//     {
+//       name: "read_file",
+//       description: "Read UTF-8 text file content from workspace path.",
+//       input_schema: {
+//         type: "object",
+//         properties: {
+//           path: { type: "string" },
+//           maxChars: { type: "number" },
+//         },
+//         required: ["path"],
+//       },
+//     },
+//     {
+//       name: "write_file",
+//       description:
+//         "Write UTF-8 text content to a workspace file path. Creates parent directories by default.",
+//       input_schema: {
+//         type: "object",
+//         properties: {
+//           path: { type: "string" },
+//           content: { type: "string" },
+//           createDirs: { type: "boolean" },
+//         },
+//         required: ["path", "content"],
+//       },
+//     },
+//   ];
+
+//   while (true) {
+//     const res = await client.messages.create({
+//       model: msg.model,
+//       messages: workingMessages,
+//       system: msg.system,
+//       max_tokens: msg.maxOutputTokens,
+//       tools,
+//     });
+
+//     const toolCalls = res.content.filter((item) => item.type === "tool_use");
+//     if (!toolCalls.length) {
+//       event.emit(EVENT_ID_LLM_RESPONSE, res);
+//       return res;
+//     }
+
+//     workingMessages.push({
+//       role: "assistant",
+//       content: res.content,
+//     });
+
+//     const toolResults = [];
+//     for (const call of toolCalls) {
+//       try {
+//         const output = await executeTool(call.name, call.input);
+//         toolResults.push({
+//           type: "tool_result",
+//           tool_use_id: call.id,
+//           content: JSON.stringify(output),
+//         });
+//       } catch (error: any) {
+//         toolResults.push({
+//           type: "tool_result",
+//           tool_use_id: call.id,
+//           content: error?.message || "Tool execution failed",
+//           is_error: true,
+//         });
+//       }
+//     }
+
+//     workingMessages.push({
+//       role: "user",
+//       content: toolResults,
+//     });
+//   }
+// }
+
 export async function chat(msg: LLMChatData) {
-  const client = new Anthropic({
-    apiKey:
-      "sk-kimi-ytzFgV7zkUHJ1YSfPedv5YV639tIaZFmmHtcAMYFP1BMHkawXmYHYoNrPc3wseU8",
-    baseURL: "https://api.kimi.com/coding/",
+  const res = await generateText({
+    ...msg,
+    stopWhen: stepCountIs(30),
+    model: wrapLanguageModel({
+      model: createAnthropic({
+        apiKey:
+          "sk-kimi-ytzFgV7zkUHJ1YSfPedv5YV639tIaZFmmHtcAMYFP1BMHkawXmYHYoNrPc3wseU8",
+        baseURL: "https://api.kimi.com/coding/v1/",
+      })("claude-opus-4-5"),
+      middleware: devToolsMiddleware(),
+    }),
+    onStepFinish: (step) => {},
+    onFinish: (step) => {},
   });
-
-  const res = await client.messages.create({
-    model: msg.model,
-    messages: msg.messages,
-    system: msg.systemPrompt,
-    max_tokens: msg.maxResponseTokens,
-    // model: "claude-opus-4-5",
-    // system: BASE_SYSTEM_PROMPT,
-    // messages: [
-    //   {
-    //     role: "user",
-    //     content: msg,
-    //   },
-    // ],
-  });
-
-  event.emit(EVENT_ID_LLM_RESPONSE, res);
 
   return res;
 }

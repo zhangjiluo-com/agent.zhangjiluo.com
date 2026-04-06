@@ -5,19 +5,23 @@
     "dev": "tsx --watch src/index.ts",
     "dev:chat": "tsx --watch src/index.ts chat --log",
     "dev:log": "tsx --watch src/index.ts log",
-    "build": "tsc --noEmit --outDir dist --moduleResolution bundler"
+    "build": "tsc --noEmit --outDir dist --moduleResolution bundler",
+    "llm:log": "npx @ai-sdk/devtools"
   },
   "packageManager": "pnpm@10.25.0",
   "dependencies": {
     "@ai-sdk/anthropic": "^3.0.66",
+    "@ai-sdk/devtools": "^0.0.15",
     "@anthropic-ai/sdk": "^0.82.0",
     "@types/node": "^25.5.2",
     "ai": "^6.0.146",
     "cac": "^7.0.0",
     "mitt": "^3.0.1",
-    "ws": "^8.20.0"
+    "ws": "^8.20.0",
+    "zod": "^4.3.6"
   },
   "devDependencies": {
+    "@types/ws": "^8.18.1",
     "tsx": "^4.21.0",
     "typescript": "^6.0.2"
   }

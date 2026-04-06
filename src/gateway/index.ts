@@ -4,6 +4,32 @@ import http from "http";
 import { WebSocketServer } from "ws";
 import { runAI } from "../ai";
 import { event } from "./event";
+import {
+  EVENT_ID_USER_CHAT_SEND_MESSAGE,
+  GATEWAY_MSG_TYPE,
+} from "../etc/constants";
+
+async function handleChannelMessage(msg: {
+  userId: string;
+  channelType: string;
+  channelId: string;
+  roomId: string;
+  type: string;
+  data: unknown;
+}) {
+  if (msg.type === GATEWAY_MSG_TYPE) {
+    event.emit(EVENT_ID_USER_CHAT_SEND_MESSAGE, {
+      userId: msg.userId,
+      channelId: msg.channelId,
+      roomId: msg.roomId,
+      agentId: "main",
+      timestamp: Date.now(),
+      message: msg.data,
+    });
+  } else {
+    console.log("还不支持其他类型消息 msg.type", msg.type);
+  }
+}
 
 export function startGateway() {
   runAI();
@@ -15,18 +41,52 @@ export function startGateway() {
     }
   });
 
-  const wss = new WebSocketServer({ server });
+  const wss = new WebSocketServer({
+    server,
+    handleProtocols(protocols, request) {
+      try {
+        if (!protocols.has("dongxi")) {
+          return false;
+        }
+        if (!protocols.has("zhangjiluo")) {
+          return false;
+        }
+
+        return "zhangjiluo";
+      } catch (error) {
+        console.log("handleProtocols error", error);
+        return false;
+      }
+    },
+  });
 
   wss.on("connection", (ws) => {
-    console.log("on connection");
+    console.log(ws.protocol); // 已协商的子协议
+    // 认证通过后
+    const channel = {
+      userId: "main",
+      channelType: "cli",
+      channelId: "main",
+      roomId: "-",
+    };
     ws.on("message", (msg) => {
-      const data = JSON.parse(msg);
-      console.log("on message", JSON.parse(msg));
-
-      event.emit(data.type, data.data);
-
-      // ws.send("WS response: " + msg);
+      try {
+        const data = JSON.parse(msg.toString());
+        if (typeof data !== "object") {
+          return;
+        }
+        if (!data || !data.type || !data.data) {
+          return;
+        }
+        handleChannelMessage({
+          ...data,
+          ...channel,
+        });
+      } catch (error) {
+        console.log("on message error", error);
+      }
     });
+
     event.on("*", (type, data) => {
       ws.send(JSON.stringify({ type, data }));
     });
