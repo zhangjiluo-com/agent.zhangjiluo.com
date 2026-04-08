@@ -8,6 +8,7 @@ import {
   EVENT_ID_USER_CHAT_SEND_MESSAGE,
   GATEWAY_MSG_TYPE,
 } from "../etc/constants";
+import { startLark } from "../channels/lark";
 
 async function handleChannelMessage(msg: {
   userId: string;
@@ -31,7 +32,8 @@ async function handleChannelMessage(msg: {
   }
 }
 
-export function startGateway() {
+export async function startGateway() {
+  await startLark();
   runAI();
 
   const server = http.createServer((req, res) => {

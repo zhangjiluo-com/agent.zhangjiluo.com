@@ -111,7 +111,7 @@ const writeTextFileTool = tool({
 });
 
 const commandTool = tool({
-  description: "Run a command on the system by node child_process.exec",
+  description: "Run a shell command on the system by node child_process.exec",
   inputSchema: z.object({
     command: z.string().trim().describe("The command to run"),
   }),
