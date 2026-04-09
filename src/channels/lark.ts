@@ -4,6 +4,9 @@ import {
   GATEWAY_MSG_TYPE,
 } from "../etc/constants";
 import { GatewayInboundMessage } from "../types";
+import { createLogger } from "../etc/log";
+
+const log = createLogger("channel:lark");
 
 export async function startLark() {
   const baseConfig = {
@@ -18,15 +21,15 @@ export async function startLark() {
   const gatewayClient = new WebSocket("ws://127.0.0.1:18800");
 
   gatewayClient.onopen = () => {
-    console.log("Gateway is connected");
+    log.i("Gateway is connected");
   };
 
   gatewayClient.onclose = () => {
-    console.log("Gateway is closed");
+    log.w("Gateway is closed");
   };
 
   gatewayClient.onerror = (error) => {
-    console.log("Gateway error", error);
+    log.e("Gateway error", error);
   };
 
   gatewayClient.onmessage = async (msg) => {
@@ -34,7 +37,7 @@ export async function startLark() {
     if (msgData.type !== EVENT_ID_AI_SEND_MESSAGE_TO_USER) {
       return;
     }
-    console.log("Gateway message  bbbb", msgData);
+    log.d("Gateway message", msgData);
     try {
       await client.im.v1.message.create({
         params: {
@@ -50,7 +53,7 @@ export async function startLark() {
         },
       });
     } catch (error) {
-      console.log("send message error", error);
+      log.e("send message error", error);
     }
   };
 
@@ -60,7 +63,7 @@ export async function startLark() {
         message: { chat_id, content, chat_type },
       } = data;
 
-      console.log("im.message.receive_v1", data);
+      log.d("im.message.receive_v1", data);
 
       let responseText = "";
 
@@ -77,7 +80,7 @@ export async function startLark() {
               extra: data,
             } satisfies GatewayInboundMessage),
           );
-          console.log(responseText);
+          log.i("receive text message", responseText);
         } else {
           responseText =
             "解析消息失败，请发送文本消息 \nparse message failed, please send text message";
@@ -88,7 +91,7 @@ export async function startLark() {
           "解析消息失败，请发送文本消息 \nparse message failed, please send text message";
       }
 
-      console.log(chat_type);
+      log.d("chat_type", chat_type);
       return;
 
       if (chat_type === "p2p") {
@@ -132,5 +135,5 @@ export async function startLark() {
 
   await wsClient.start({ eventDispatcher });
 
-  console.log("Lark channel started");
+  log.i("Lark channel started");
 }

@@ -4,9 +4,14 @@ import { mkdir, readdir, readFile, writeFile } from "node:fs/promises";
 import { dirname, resolve, sep } from "node:path";
 import { promisify } from "node:util";
 import z from "zod";
+import { createLogger } from "../../etc/log";
+import { event } from "../../gateway/event";
+import { EVENT_ID_AI_TASK_DISPATCH } from "../../etc/constants";
+import { addTask, endTask } from "../task";
 
 const TOOL_WORKSPACE_ROOT = resolve(process.cwd());
 const execAsync = promisify(exec);
+const log = createLogger("ai:tools");
 
 function toSafeAbsolutePath(inputPath: string) {
   const resolvedPath = resolve(TOOL_WORKSPACE_ROOT, inputPath);
@@ -110,24 +115,20 @@ const writeTextFileTool = tool({
   },
 });
 
-const commandTool = tool({
+export const commandTool = tool({
   description: "Run a shell command on the system by node child_process.exec",
   inputSchema: z.object({
     command: z.string().trim().describe("The command to run"),
   }),
   async execute(input) {
     const startTime = Date.now();
-    console.log("即将执行命令:", input);
+    log.i("即将执行命令", input);
     try {
       const { stdout, stderr } = await execAsync(input.command, {
         // timeout: 10_000,
         encoding: "utf-8",
       });
-      console.log(
-        "执行命令耗时:",
-        Math.floor((Date.now() - startTime) / 1000),
-        "秒",
-      );
+      log.i("执行命令耗时:", Math.floor((Date.now() - startTime) / 1000), "秒");
       return {
         result: "success",
         command: input.command,
@@ -135,7 +136,7 @@ const commandTool = tool({
         stderr,
       };
     } catch (e: any) {
-      console.log(
+      log.e(
         "执行命令失败:",
         e,
         "耗时:",
@@ -153,9 +154,87 @@ const commandTool = tool({
   },
 });
 
+const taskDispatchTool = tool({
+  description: `Dispatch a task to a async task agent which has empty memory.
+  The async agent can use below tools to complete the task:
+
+  - **command**: ${commandTool.description}
+
+  If the task cannot be completed using the above tools, do not use this tool.
+  Once the task end, system will notify the you as user message.
+  Once task submit success, you can tell user.
+`,
+  inputSchema: z.object({
+    name: z.string().trim().describe("The name of the task"),
+    description: z
+      .string()
+      .trim()
+      .min(1)
+      .max(2000)
+      .describe(
+        "The description of the task, along with sufficient and accurate context",
+      ),
+  }),
+  async execute(input, context) {
+    try {
+      if (!context.experimental_context) {
+        return {
+          result: "failed",
+          reason: "系统异常, 无法派发任务",
+        };
+      }
+      const taskId = addTask(input, context.experimental_context);
+      return {
+        result: "success",
+        taskId,
+      };
+    } catch (error) {
+      return {
+        result: "failed",
+        // task: input.task,
+        reason: error instanceof Error ? error.message : String(error),
+      };
+    }
+  },
+});
+
+export const taskResultSubmitTool = tool({
+  description: `Submit a task result to system`,
+  inputSchema: z.object({
+    // taskId: z.string().trim().describe("The task id"),
+    isCompleted: z.boolean().describe("Whether the task is completed"),
+    result: z
+      .string()
+      .trim()
+      .describe(
+        "The task result completed simple description or failed reason",
+      ),
+  }),
+  async execute(input, context) {
+    try {
+      endTask({
+        // experimental_context 这里放 当前目标 task 对象
+        taskId: (context.experimental_context as any).id,
+        // taskId: input.taskId,
+        isCompleted: input.isCompleted,
+        result: input.result,
+      });
+      return {
+        result: "success",
+      };
+    } catch (error) {
+      return {
+        result: "failed",
+        reason: error instanceof Error ? error.message : String(error),
+      };
+    }
+  },
+});
+
 export const tools = {
   // list_directory: listDirectoryTool,
   // read_file: readFileAsTextTool,
   // write_file: writeTextFileTool,
-  command: commandTool,
+  task_dispatch: taskDispatchTool,
+  // command: commandTool,
 };

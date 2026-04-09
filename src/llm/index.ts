@@ -16,6 +16,7 @@ type LLMChatData = {
   maxOutputTokens: number;
   model: string;
   tools?: ToolSet;
+  experimental_context?: unknown;
 };
 
 // export async function chat1(msg: LLMChatData) {
@@ -126,6 +127,7 @@ export async function chat(msg: LLMChatData) {
     }),
     onStepFinish: (step) => {},
     onFinish: (step) => {},
+    experimental_context: msg.experimental_context,
   });
 
   return res;

@@ -5,11 +5,14 @@ import {
   EVENT_ID_AI_SEND_MESSAGE_TO_USER,
   GATEWAY_MSG_TYPE,
 } from "../etc/constants";
+import { createLogger } from "../etc/log";
+
+const log = createLogger("cli:chat");
 
 // cli 渠道直连 网关 不需要中间渠道
 
 function closeChatCli() {
-  console.log("goodbye");
+  log.i("goodbye");
   exit(0);
 }
 
@@ -20,7 +23,7 @@ export async function startCliChannel() {
   // 直连到网关, 不需要中间渠道
   const ws = new WebSocket("ws://127.0.0.1:18800", ["dongxi", "zhangjiluo"]);
   ws.onopen = async () => {
-    console.log("已经连接到网关");
+    log.i("已经连接到网关");
     // 1. 应该先请求认证
     // 2. 认证通过后, 才能发送消息
     // 3. 处理消息
@@ -33,7 +36,7 @@ export async function startCliChannel() {
 
       if (message.startsWith("/")) {
         // handle command
-        console.log("当前不支持命令\n");
+        log.w("当前不支持命令");
         continue;
       } else {
         ws.send(
@@ -46,11 +49,11 @@ export async function startCliChannel() {
     }
   };
   ws.onclose = () => {
-    console.log("cli channel close");
+    log.w("cli channel close");
     closeChatCli();
   };
   ws.onerror = (err) => {
-    console.log("cli channel error", err);
+    log.e("cli channel error", err);
     closeChatCli();
   };
   ws.onmessage = (msg: MessageEvent<string>) => {
@@ -65,7 +68,7 @@ export async function startCliChannel() {
         process.stdout.write(res.content.text);
         process.stdout.write("\n");
       } else {
-        console.log("其他类型", res.content);
+        log.w("其他类型", res.content);
       }
     }
   };

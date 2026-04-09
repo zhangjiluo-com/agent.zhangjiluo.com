@@ -2,11 +2,15 @@ import { event } from "../gateway/event";
 import { chat } from "../llm";
 import { tools } from "./tools";
 import { appendMessage, getMessages } from "./messages";
-import { EVENT_ID_AI_SEND_MESSAGE_TO_USER } from "../etc/constants";
+import {
+  EVENT_ID_AI_SEND_MESSAGE_TO_USER,
+  EVENT_ID_AI_TASK_END,
+} from "../etc/constants";
 import { EVENT_ID_USER_CHAT_SEND_MESSAGE } from "../etc/constants";
+import { getTaskById } from "./task";
+import { log } from "../etc/log";
 
-const BASE_SYSTEM_PROMPT = `You are a helpful assistant. Respond in the same language the user uses.
-You run on windows 11 and can access whole computer. Current time is ${new Date().toLocaleString()}.
+const BASE_SYSTEM_PROMPT = `You are a assistant. Respond in the same language the user uses.
 `;
 
 /**
@@ -55,6 +59,7 @@ async function handleUserChatSendMessage(msg: {
     maxOutputTokens: 4096,
     model: "claude-opus-4-5",
     tools: tools,
+    experimental_context: msg,
   });
 
   await appendMessage(
@@ -78,6 +83,34 @@ async function handleUserChatSendMessage(msg: {
   });
 }
 
+async function handleTaskEnd(params: { id: string }) {
+  const task = getTaskById(params.id);
+  if (!task) {
+    log.e("Task not found", params.id);
+    return;
+  }
+
+  const context = task.context as {
+    userId: string;
+    channelType: string;
+    channelId: string;
+    roomId: string;
+    agentId: string;
+    timestamp: number;
+  };
+
+  await handleUserChatSendMessage({
+    userId: context.userId,
+    channelType: context.channelType,
+    channelId: context.channelId,
+    roomId: context.roomId,
+    agentId: context.agentId,
+    timestamp: context.timestamp,
+    message: `Task [${task.name}](${task.id}) ${task.status}: ${task.summary || task.reason || ""}`,
+  });
+}
+
 export function linsten() {
   event.on(EVENT_ID_USER_CHAT_SEND_MESSAGE, handleUserChatSendMessage);
+  event.on(EVENT_ID_AI_TASK_END, handleTaskEnd);
 }

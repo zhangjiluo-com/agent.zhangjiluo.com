@@ -1,4 +1,4 @@
-import { log } from "../etc/log";
+import { createLogger } from "../etc/log";
 
 import http from "http";
 import { WebSocketServer } from "ws";
@@ -10,6 +10,8 @@ import {
 } from "../etc/constants";
 import { startLark } from "../channels/lark";
 import { GatewayInboundMessage } from "../types";
+
+const log = createLogger("gateway");
 
 async function handleChannelMessage(msg: GatewayInboundMessage) {
   if (msg.type === GATEWAY_MSG_TYPE) {
@@ -24,7 +26,7 @@ async function handleChannelMessage(msg: GatewayInboundMessage) {
       origin: msg,
     });
   } else {
-    console.log("还不支持其他类型消息 msg.type", msg.type);
+    log.w("还不支持其他类型消息 msg.type", msg.type);
   }
 }
 
@@ -49,14 +51,14 @@ export async function startGateway() {
 
         return "zhangjiluo";
       } catch (error) {
-        console.log("handleProtocols error", error);
+        log.e("handleProtocols error", error);
         return false;
       }
     },
   });
 
   wss.on("connection", (ws) => {
-    console.log(ws.protocol); // 已协商的子协议
+    log.i("ws protocol", ws.protocol);
     // 认证通过后
     // const channel = {
     //   userId: "main",
@@ -75,12 +77,12 @@ export async function startGateway() {
         }
         handleChannelMessage(data as GatewayInboundMessage);
       } catch (error) {
-        console.log("on message error", error);
+        log.e("on message error", error);
       }
     });
 
     event.on("*", (type, data) => {
-      console.log("on event", type, data);
+      log.d("on event", type, data);
       // 这里应该要过滤
       ws.send(JSON.stringify({ type, data }));
     });
@@ -96,7 +98,7 @@ export async function startGateway() {
         reusePort: false,
       },
       () => {
-        console.log("Gateway is running on 18800");
+        log.i("Gateway is running on 18800");
         resolve(1);
       },
     );
