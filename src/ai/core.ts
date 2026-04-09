@@ -106,7 +106,7 @@ async function handleTaskEnd(params: { id: string }) {
     roomId: context.roomId,
     agentId: context.agentId,
     timestamp: context.timestamp,
-    message: `Task [${task.name}](${task.id}) ${task.status}: ${task.summary || task.reason || ""}`,
+    message: `Task [${task.name}](${task.id}) ${task.status}: ${task.report || task.reason || ""}`,
   });
 }
 

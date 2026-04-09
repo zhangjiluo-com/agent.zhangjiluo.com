@@ -17,7 +17,7 @@ interface Task {
     | "completed"
     | "failed";
   messages: any[];
-  summary?: string; // 完成时的简单描述
+  report?: string; // 完成时的简单描述
   reason?: string; // 失败时的详细描述
   context: unknown; // 任务上下文
 }
@@ -80,9 +80,19 @@ export function endTask(input: {
   }
   task.status = input.isCompleted ? "completed" : "failed";
   if (input.isCompleted) {
-    task.summary = input.result;
+    task.report = input.result;
   } else {
     task.reason = input.result;
   }
+  event.emit(EVENT_ID_AI_TASK_END, { id: task.id });
+}
+
+export function submitTask(input: { taskId: string; report: string }) {
+  const task = getTaskById(input.taskId);
+  if (!task) {
+    throw new Error(`Task not found (ID: ${input.taskId})`);
+  }
+  task.status = "completed";
+  task.report = input.report;
   event.emit(EVENT_ID_AI_TASK_END, { id: task.id });
 }
