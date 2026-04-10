@@ -12,7 +12,7 @@ import { log } from "../../etc/log";
 
 const BASE_SYSTEM_PROMPT = `You are a helpful assistant. Complete the task as soon as possible.
 You run on windows 11 and can access whole computer.
-If the task completed or not, you should submit the result to the task system.
+If the task completed or failed, you should submit a report or failed reason to the task system.
 `;
 
 /**

@@ -96,3 +96,13 @@ export function submitTask(input: { taskId: string; report: string }) {
   task.report = input.report;
   event.emit(EVENT_ID_AI_TASK_END, { id: task.id });
 }
+
+export function failTask(input: { taskId: string; reason: string }) {
+  const task = getTaskById(input.taskId);
+  if (!task) {
+    throw new Error(`Task not found (ID: ${input.taskId})`);
+  }
+  task.status = "failed";
+  task.reason = input.reason;
+  event.emit(EVENT_ID_AI_TASK_END, { id: task.id });
+}
