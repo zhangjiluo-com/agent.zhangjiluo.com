@@ -37,6 +37,10 @@ export async function startLark() {
     if (msgData.type !== EVENT_ID_AI_SEND_MESSAGE_TO_USER) {
       return;
     }
+    if (!msgData.data.channelId) {
+      log.d("channelId is empty");
+      return;
+    }
     log.d("Gateway message", msgData);
     try {
       await client.im.v1.message.create({

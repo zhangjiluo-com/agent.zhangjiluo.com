@@ -12,6 +12,7 @@
   "dependencies": {
     "@ai-sdk/anthropic": "^3.0.66",
     "@ai-sdk/devtools": "^0.0.15",
+    "@ai-sdk/mcp": "^1.0.36",
     "@anthropic-ai/sdk": "^0.82.0",
     "@larksuiteoapi/node-sdk": "^1.60.0",
     "@types/node": "^25.5.2",

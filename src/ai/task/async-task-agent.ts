@@ -1,6 +1,6 @@
 import { event } from "../../gateway/event";
 import { chat } from "../../llm";
-import { commandTool, taskResultSubmitTool, tools } from "../tools";
+import { getAsyncTaskTools } from "../tools";
 import { appendMessage, getMessages } from "../messages";
 import {
   EVENT_ID_AI_SEND_MESSAGE_TO_USER,
@@ -39,15 +39,13 @@ async function handleTaskAdd(taskBase: { id }) {
     },
   ]);
   const messageList = await getTaskMessages(task.id);
+  const tools = await getAsyncTaskTools();
   const res = await chat({
     system: BASE_SYSTEM_PROMPT,
     messages: messageList,
     maxOutputTokens: 4096,
     model: "claude-opus-4-5",
-    tools: {
-      command: commandTool,
-      task_result_submit: taskResultSubmitTool,
-    },
+    tools,
     experimental_context: task,
   });
   await writeTaskMessage(task.id, res.response.messages);

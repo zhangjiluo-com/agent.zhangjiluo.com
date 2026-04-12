@@ -1,0 +1,16 @@
+{
+  "mcpServers": {
+    "filesystem": {
+      "command": "npx",
+      "args": [
+        "-y",
+        "@modelcontextprotocol/server-filesystem",
+        "."
+      ]
+    },
+    "docs": {
+      "transport": "http",
+      "url": "http://localhost:3000/mcp"
+    }
+  }
+}

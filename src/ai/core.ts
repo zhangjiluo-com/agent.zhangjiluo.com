@@ -1,6 +1,6 @@
 import { event } from "../gateway/event";
 import { chat } from "../llm";
-import { tools } from "./tools";
+import { getAssistantTools } from "./tools";
 import { appendMessage, getMessages } from "./messages";
 import {
   EVENT_ID_AI_SEND_MESSAGE_TO_USER,
@@ -52,6 +52,7 @@ async function handleUserChatSendMessage(msg: {
     agentId: msg.agentId,
     roomId: msg.roomId,
   });
+  const tools = await getAssistantTools();
 
   const res = await chat({
     system: BASE_SYSTEM_PROMPT,

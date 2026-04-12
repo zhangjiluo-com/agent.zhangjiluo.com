@@ -1,4 +1,4 @@
-import { tool, ToolLoopAgent } from "ai";
+import { tool, ToolLoopAgent, type ToolSet } from "ai";
 import { exec } from "node:child_process";
 import { mkdir, readdir, readFile, writeFile } from "node:fs/promises";
 import { dirname, resolve, sep } from "node:path";
@@ -8,6 +8,7 @@ import { createLogger } from "../../etc/log";
 import { event } from "../../gateway/event";
 import { EVENT_ID_AI_TASK_DISPATCH } from "../../etc/constants";
 import { addTask, endTask } from "../task";
+import { getMcpTools } from "./mcp";
 
 const TOOL_WORKSPACE_ROOT = resolve(process.cwd());
 const execAsync = promisify(exec);
@@ -231,10 +232,21 @@ export const taskResultSubmitTool = tool({
   },
 });
 
-export const tools = {
-  // list_directory: listDirectoryTool,
-  // read_file: readFileAsTextTool,
-  // write_file: writeTextFileTool,
+export const localTools = {
   task_dispatch: taskDispatchTool,
-  // command: commandTool,
 };
+
+export async function getAssistantTools(): Promise<ToolSet> {
+  return {
+    ...localTools,
+    ...(await getMcpTools()),
+  };
+}
+
+export async function getAsyncTaskTools(): Promise<ToolSet> {
+  return {
+    command: commandTool,
+    task_result_submit: taskResultSubmitTool,
+    ...(await getMcpTools()),
+  };
+}

@@ -47,3 +47,35 @@ llm -> agent -> agent tool -> llm
 如果可以完成, 接待Agent 就派发一个异步任务到任务表.
 系统 观察任务表, 如果有任务进来,就派发到一个快速任务Agent 处理.
 快速任务Agent 先判断任务是否复杂,如果任务复杂, 需要调整任务复杂度, 然后再派发到一个快速任务Agent 处理.
+
+## MCP
+
+系统启动后会自动读取项目根目录下的 `mcp.config.json` 并连接其中声明的 MCP Server。
+
+配置格式:
+
+```json
+{
+  "mcpServers": {
+    "filesystem": {
+      "command": "npx",
+      "args": ["-y", "@modelcontextprotocol/server-filesystem", "."]
+    },
+    "docs": {
+      "transport": "http",
+      "url": "http://localhost:3000/mcp"
+    },
+    "legacy": {
+      "transport": "sse",
+      "url": "http://localhost:3001/sse"
+    }
+  }
+}
+```
+
+- `command` 存在时默认按 `stdio` 方式连接
+- `transport` 支持 `stdio`、`http`、`sse`
+- `disabled: true` 可以临时关闭某个 server
+- `mcp.config.example.json` 提供了示例模板
+- 加载后的工具会自动挂到主 Agent 和任务 Agent 上
+- 为避免重名, MCP 工具会以 `mcp_服务名__工具名` 的形式注册
