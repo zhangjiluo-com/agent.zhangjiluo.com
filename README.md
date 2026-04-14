@@ -74,6 +74,7 @@ llm -> agent -> agent tool -> llm
 ```
 
 - `command` 存在时默认按 `stdio` 方式连接
+- Windows 下对于 `npx`/`npm`/`pnpm`/`yarn`/`bunx` 等命令会自动用 `cmd /c` 包装, 配置可保持跨平台一致
 - `transport` 支持 `stdio`、`http`、`sse`
 - `disabled: true` 可以临时关闭某个 server
 - `mcp.config.example.json` 提供了示例模板

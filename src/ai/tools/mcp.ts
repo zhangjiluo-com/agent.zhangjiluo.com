@@ -44,6 +44,59 @@ let cachedTools: ToolSet = {};
 let cachedClients: MCPClient[] = [];
 let loadingPromise: Promise<ToolSet> | null = null;
 
+const WINDOWS_CMD_WRAPPED_COMMANDS = new Set([
+  "npm",
+  "npx",
+  "pnpm",
+  "pnpx",
+  "yarn",
+  "bunx",
+]);
+
+function shouldWrapWindowsShellCommand(command: string) {
+  if (process.platform !== "win32") {
+    return false;
+  }
+
+  const normalized = command.trim().toLowerCase();
+  if (
+    normalized === "cmd" ||
+    normalized === "cmd.exe" ||
+    normalized === "powershell" ||
+    normalized === "powershell.exe" ||
+    normalized === "pwsh" ||
+    normalized === "pwsh.exe"
+  ) {
+    return false;
+  }
+
+  if (
+    normalized.includes("/") ||
+    normalized.includes("\\") ||
+    /\.(exe|cmd|bat|com|ps1)$/i.test(normalized)
+  ) {
+    return false;
+  }
+
+  return WINDOWS_CMD_WRAPPED_COMMANDS.has(normalized);
+}
+
+function normalizeStdioCommandForWindows(command: string, args?: string[]) {
+  if (!shouldWrapWindowsShellCommand(command)) {
+    return {
+      command,
+      args,
+      wrapped: false,
+    };
+  }
+
+  return {
+    command: "cmd",
+    args: ["/c", command, ...(args ?? [])],
+    wrapped: true,
+  };
+}
+
 function normalizeServerConfig(
   serverName: string,
   config: RawServerConfig,
@@ -61,10 +114,20 @@ function normalizeServerConfig(
     if (!config.command) {
       throw new Error(`MCP server "${serverName}" 缺少 command`);
     }
+    const normalizedStdio = normalizeStdioCommandForWindows(
+      config.command,
+      config.args,
+    );
+    if (normalizedStdio.wrapped) {
+      log.i(
+        `MCP server ${serverName} 在 Windows 下自动使用 cmd /c 包装命令`,
+        config.command,
+      );
+    }
     return {
       transport,
-      command: config.command,
-      args: config.args,
+      command: normalizedStdio.command,
+      args: normalizedStdio.args,
       env: config.env,
       cwd: config.cwd,
     };
