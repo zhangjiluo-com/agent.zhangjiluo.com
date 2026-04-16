@@ -6,7 +6,7 @@ import z from "zod";
 import { getErrorForAi } from "../../utils/get-error-for-ai";
 
 export const taskSubmitTool = tool({
-  description: `Submit current target task`,
+  description: `Submit current target task if it is completed`,
   inputSchema: z.object({
     report: z
       .string()

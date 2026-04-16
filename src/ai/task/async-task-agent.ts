@@ -12,7 +12,8 @@ import { log } from "../../etc/log";
 
 const BASE_SYSTEM_PROMPT = `You are a helpful assistant. Complete the task as soon as possible.
 You run on windows 11 and can access whole computer.
-If the task completed or failed, you should submit a report or failed reason to the task system.
+If the task completed, submit this task by task_submit tool.
+If the task failed, submit this task by task_fail tool.
 `;
 
 /**
@@ -30,6 +31,7 @@ async function handleTaskAdd(taskBase: { id }) {
     log.e(`task not found ${taskBase.id}`);
     return;
   }
+  task.status = "running";
   const description = task.description;
 
   await writeTaskMessage(task.id, [
@@ -49,6 +51,17 @@ async function handleTaskAdd(taskBase: { id }) {
     experimental_context: task,
   });
   await writeTaskMessage(task.id, res.response.messages);
+
+  const latestTask = getTaskById(task.id);
+  if (!latestTask) {
+    log.e(`task not found ${task.id}`);
+    return;
+  }
+
+  if (latestTask.status !== "completed" && latestTask.status !== "failed") {
+    log.e(`end task status not completed or failed ${latestTask.status}`);
+    return;
+  }
 
   // event.emit(EVENT_ID_AI_SEND_MESSAGE_TO_USER, {
   //   userId: msg.userId,

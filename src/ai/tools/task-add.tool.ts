@@ -1,14 +1,16 @@
 import { tool } from "ai";
 import z from "zod";
 import { addTask } from "../task";
+import { shellCommandTool } from "./shell-command.tool";
 
 // 任务添加工具 主要给主 Agent 调用
 
-const taskAddTool = tool({
+export const taskAddTool = tool({
   description: `Add an async task to system.
   The async agent can use below tools to complete the task:
 
-
+  - **command**: ${shellCommandTool.description}
+  
   If the task cannot be completed using the above tools, do not use this tool.
   Once the task end, system will notify the you as user message.
   Once task submit success, you can tell user.

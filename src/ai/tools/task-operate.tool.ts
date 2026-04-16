@@ -4,7 +4,7 @@ import z from "zod";
 
 // 任务操作工具 主要给主 Agent 调用
 export const taskOperateTool = tool({
-  description: `Operate system agent async tasks.`,
+  description: `Operate a system agent async task.`,
   inputSchema: z.object({
     taskId: z.string().trim().describe("The task id"),
     operate: z
